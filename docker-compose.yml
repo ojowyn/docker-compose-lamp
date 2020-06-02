@@ -4,6 +4,9 @@ services:
   webserver:
     build: 
       context: ./bin/${PHPVERSION}
+      args:
+        USER_ID: ${USER_ID}
+        GROUP_ID: ${GROUP_ID}
     container_name: ${PHPVERSION}
     restart: 'always'
     ports:
@@ -16,6 +19,8 @@ services:
       - ${PHP_INI-./config/php/php.ini}:/usr/local/etc/php/php.ini
       - ${VHOSTS_DIR-./config/vhosts}:/etc/apache2/sites-enabled
       - ${LOG_DIR-./logs/apache2}:/var/log/apache2
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
   database:
     build:
       context: "./bin/${DATABASE}"
@@ -26,6 +31,7 @@ services:
     volumes: 
       - ${MYSQL_DATA_DIR-./data/mysql}:/var/lib/mysql
       - ${MYSQL_LOG_DIR-./logs/mysql}:/var/log/mysql
+      - ${MYSQL_CONF_DIR-./config/mysql}:/etc/mysql/conf.d
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -34,6 +40,7 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: 'phpmyadmin'
+    restart: 'always'
     links:
       - database
     environment:
@@ -51,6 +58,7 @@ services:
       - ${PHP_INI-./config/php/php.ini}:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
   redis:
     container_name: 'redis'
+    restart: 'always'
     image: redis:latest
     ports:
       - "127.0.0.1:${HOST_MACHINE_REDIS_PORT}:6379"
